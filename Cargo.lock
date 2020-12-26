@@ -1219,6 +1219,7 @@ name = "video-buzzer"
 version = "0.1.0"
 dependencies = [
  "futures",
+ "percent-encoding",
  "rand 0.8.0",
  "tokio",
  "warp",

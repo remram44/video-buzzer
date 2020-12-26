@@ -7,10 +7,13 @@
     <p><input type="file" id="selector" accept="video/*" /></p>
     <p><video id="player" controls></video></p>
     <script>
+var currentPath = window.location.pathname; // "/video/1234"
+var videoId = currentPath.substring(7); // "1234"
+
 var videoPlayer = document.getElementById("player");
-var fileSelector = document.getElementById("selector");
 
 // Select a local video
+var fileSelector = document.getElementById("selector");
 function setVideo() {
   var file = fileSelector.files[0];
   console.log(file);
@@ -30,13 +33,19 @@ fileSelector.addEventListener("change", setVideo);
 
 // Show join URL
 var joinUrl = document.getElementById("joinurl");
-var currentPath = window.location.pathname; // "/video/1234"
-var videoId = currentPath.substring(7); // "1234"
 var url = window.location.protocol + "//" + window.location.host + "/" + videoId;
 joinUrl.innerText = url;
 joinUrl.href = url;
 
-// TODO: Receive buzzes
+// Receive buzzes
+var wsProto = "wss:";
+if(window.location.protocol === "http:") {
+  wsProto = "ws:";
+}
+var socket = new WebSocket(wsProto + "//" + window.location.host + "/api/host/" + videoId);
+socket.addEventListener("message", function(e) {
+  console.log("Message: ", e.data);
+});
     </script>
   </body>
 </html>

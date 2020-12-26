@@ -12,17 +12,23 @@ if(!match) {
 }
 var videoId = Number(match[1]);
 var name = decodeURIComponent(match[2]);
+
 var buzzer = document.getElementById("buzzer");
 
+// Connect
+var wsProto = "wss:";
+if(window.location.protocol === "http:") {
+  wsProto = "ws:";
+}
+var socket = new WebSocket(wsProto + "//" + window.location.host + "/api/buzzer/" + videoId + "/" + encodeURIComponent(name));
+
+// Buzz
 function buzz(e) {
   e.preventDefault();
 
-  // TODO: Buzz
+  socket.send("buzz");
 }
-
 buzzer.addEventListener("click", buzz);
-
-// TODO: Join
     </script>
   </body>
 </html>

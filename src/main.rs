@@ -48,7 +48,8 @@ async fn main() {
                 warp::path!("host" / u32)
                     .and(warp::ws())
                     .map(|video_id, ws: warp::ws::Ws| {
-                        ws.on_upgrade(|ws| {
+                        ws.on_upgrade(move |ws| {
+                            eprintln!("Video {}: host connected", video_id);
                             // TODO: Video channel
                             let (tx, rx) = ws.split();
                             rx.forward(tx).map(|result| {
@@ -61,8 +62,12 @@ async fn main() {
                 .or(
                     warp::path!("buzzer" / u32 / String)
                         .and(warp::ws())
-                        .map(|video_id, player_name, ws: warp::ws::Ws| {
-                            ws.on_upgrade(|ws| {
+                        .map(|video_id, player_name: String, ws: warp::ws::Ws| {
+                            Ok(ws.on_upgrade(move |ws| {
+                                let player_name = percent_encoding::percent_decode(player_name.as_bytes())
+                                    .decode_utf8()
+                                    .expect("Invalid name"); // FIXME
+                                eprintln!("Video {}: player {:?} connected", video_id, player_name);
                                 // TODO: Buzzer channel
                                 let (tx, rx) = ws.split();
                                 rx.forward(tx).map(|result| {
@@ -70,7 +75,7 @@ async fn main() {
                                         eprintln!("websocket error: {:?}", e);
                                     }
                                 })
-                            })
+                            }))
                         })
                 )
             )
