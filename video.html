@@ -1,0 +1,30 @@
+<!DOCTYPE html>
+<html>
+  <head>
+  </head>
+  <body>
+    <p><input type="file" id="selector" accept="video/*" /></p>
+    <p><video id="player" controls></video></p>
+    <script>
+var videoPlayer = document.getElementById("player");
+var fileSelector = document.getElementById("selector");
+
+function setVideo() {
+  var file = fileSelector.files[0];
+  console.log(file);
+  var videoType = file.type;
+  console.log(videoType);
+  var canPlay = videoPlayer.canPlayType(videoType);
+  console.log(canPlay);
+  if(canPlay === "" || canPlay === "no") {
+    alert("Video format not supported");
+    return;
+  }
+  var fileURL = URL.createObjectURL(file);
+  videoPlayer.src = fileURL;
+}
+
+fileSelector.addEventListener("change", setVideo);
+    </script>
+  </body>
+</html>
