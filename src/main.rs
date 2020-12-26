@@ -10,27 +10,33 @@ async fn main() {
     let routes =
         // Index, redirect to a video player
         path::end()
-            .map(|| b"./" as &[u8]) // TODO
-        // Buzzer join URL
-        .or(
-            warp::path!(u32)
-                .map(|_| b"<>" as &[u8]) // TODO
-        )
+            .map(|| b"./" as &[u8]) // TODO: Redirect to random video ID
         // Video player
         .or(
             warp::path!("video" / u32)
-                .map(|_| include_bytes!("../player.html") as &[u8])
+                .map(|_| include_bytes!("../video.html") as &[u8])
+                .with(header("Content-Type", "text/html; charset=utf-8"))
+        )
+        // Buzzer join URL
+        .or(
+            warp::path!(u32)
+                .map(|_| include_bytes!("../join.html") as &[u8])
                 .with(header("Content-Type", "text/html; charset=utf-8"))
         )
         // Buzzer view
         .or(
-            warp::path!("buzz" / u32 / u32)
-                .map(|_, _| b"<>" as &[u8]) // TODO
+            warp::path!("buzz" / u32 / String)
+                .map(|_, _| include_bytes!("../buzzer.html") as &[u8])
+                .with(header("Content-Type", "text/html; charset=utf-8"))
         )
         // API
         .or(
+            warp::path!("api" / "join" / u32 / String)
+                .map(|_, _| b"{}" as &[u8]) // TODO: Player (re)joined
+        )
+        .or(
             warp::path!("api" / "buzz" / u32 / String)
-                .map(|_, _| b"{}" as &[u8]) // TODO
+                .map(|_, _| b"{}" as &[u8]) // TODO: Player buzzed
         );
 
     eprintln!("Starting server on port {}", PORT);

@@ -1,0 +1,28 @@
+<!DOCTYPE html>
+<html>
+  <head>
+  </head>
+  <body>
+    <p><button id="buzzer">Buzz!</button></p>
+    <script>
+var currentPath = window.location.pathname; // "/buzz/1234/John+Doe"
+var match = currentPath.match(new RegExp("^/buzz/([0-9]+)/(.+)$"));
+if(!match) {
+  window.location.href = "/";
+}
+var videoId = Number(match[1]);
+var name = decodeURIComponent(match[2]);
+var buzzer = document.getElementById("buzzer");
+
+function buzz(e) {
+  e.preventDefault();
+
+  // TODO: Buzz
+}
+
+buzzer.addEventListener("click", buzz);
+
+// TODO: Join
+    </script>
+  </body>
+</html>

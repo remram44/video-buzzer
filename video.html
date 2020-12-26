@@ -3,12 +3,14 @@
   <head>
   </head>
   <body>
+    <p>Join using this URL: <a id="joinurl" style="font-family: monospace; text-decoration: none;">...</a></p>
     <p><input type="file" id="selector" accept="video/*" /></p>
     <p><video id="player" controls></video></p>
     <script>
 var videoPlayer = document.getElementById("player");
 var fileSelector = document.getElementById("selector");
 
+// Select a local video
 function setVideo() {
   var file = fileSelector.files[0];
   console.log(file);
@@ -25,6 +27,16 @@ function setVideo() {
 }
 
 fileSelector.addEventListener("change", setVideo);
+
+// Show join URL
+var joinUrl = document.getElementById("joinurl");
+var currentPath = window.location.pathname; // "/video/1234"
+var videoId = currentPath.substring(7); // "1234"
+var url = window.location.protocol + "//" + window.location.host + "/" + videoId;
+joinUrl.innerText = url;
+joinUrl.href = url;
+
+// TODO: Receive buzzes
     </script>
   </body>
 </html>

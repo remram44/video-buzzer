@@ -1,0 +1,25 @@
+<!DOCTYPE html>
+<html>
+  <head>
+  </head>
+  <body>
+    <form id="nameform">
+      <input type="text" id="handle" />
+      <input type="submit" value="Join!" />
+    </form>
+    <script>
+function join(e) {
+  e.preventDefault();
+
+  var currentPath = window.location.pathname; // "/1234"
+  var videoId = currentPath.substring(1); // "1234"
+
+  var name = document.getElementById("handle").value;
+
+  window.location.href = "/buzz/" + videoId + "/" + encodeURIComponent(name);
+}
+
+document.getElementById("nameform").addEventListener("submit", join);
+    </script>
+  </body>
+</html>
