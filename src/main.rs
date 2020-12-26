@@ -1,17 +1,28 @@
 use futures::{FutureExt, StreamExt};
+use rand::Rng;
 use std::net::Ipv4Addr;
-use warp::Filter;
+use warp::{Filter, Reply};
+use warp::http::Uri;
 use warp::path;
 use warp::reply::with::header;
 
 const PORT: u16 = 8000;
+
+fn redirect_to_random_video() -> impl Reply {
+    let video_id: u32 = rand::thread_rng().gen_range(1..1000000);
+    let uri = Uri::builder()
+        .path_and_query(format!("/video/{}", video_id))
+        .build()
+        .expect("Building random video URL failed");
+    warp::redirect::temporary(uri)
+}
 
 #[tokio::main]
 async fn main() {
     let routes =
         // Index, redirect to a video player
         path::end()
-            .map(|| b"./" as &[u8]) // TODO: Redirect to random video ID
+            .map(redirect_to_random_video)
         // Video player
         .or(
             warp::path!("video" / u32)
