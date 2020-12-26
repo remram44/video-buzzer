@@ -22,4 +22,5 @@ Status
 
 * [x] Can play a video file
 * [x] Can join a game and buzz
-* [ ] Buzzing stops the video, displays name of player
+* [x] Buzzing stops the video, displays name of player
+* [ ] Make interface pretty, stretch video to window, make it mobile-friendly
