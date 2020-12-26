@@ -1,5 +1,7 @@
 use futures::{FutureExt, StreamExt};
+use log::{info, warn};
 use rand::Rng;
+use std::env;
 use std::net::Ipv4Addr;
 use warp::{Filter, Rejection, Reply};
 use warp::http::Uri;
@@ -19,12 +21,12 @@ fn redirect_to_random_video() -> impl Reply {
 
 fn host_websocket(video_id: u32, ws: warp::ws::Ws) -> impl Reply {
     ws.on_upgrade(move |ws| {
-        eprintln!("Video {}: host connected", video_id);
+        info!("Video {}: host connected", video_id);
         // TODO: Video channel
         let (tx, rx) = ws.split();
         rx.forward(tx).map(|result| {
             if let Err(e) = result {
-                eprintln!("websocket error: {:?}", e);
+                warn!("websocket error: {:?}", e);
             }
         })
     })
@@ -36,12 +38,12 @@ async fn buzzer_websocket(video_id: u32, player_name: String, ws: warp::ws::Ws) 
         .map_err(|_| warp::reject::not_found())?
         .into_owned();
     Ok(ws.on_upgrade(move |ws| {
-        eprintln!("Video {}: player {:?} connected", video_id, player_name);
+        info!("Video {}: player {:?} connected", video_id, player_name);
         // TODO: Buzzer channel
         let (tx, rx) = ws.split();
         rx.forward(tx).map(|result| {
             if let Err(e) = result {
-                eprintln!("websocket error: {:?}", e);
+                warn!("websocket error: {:?}", e);
             }
         })
     }))
@@ -49,6 +51,12 @@ async fn buzzer_websocket(video_id: u32, player_name: String, ws: warp::ws::Ws) 
 
 #[tokio::main]
 async fn main() {
+    // Logging
+    if env::var_os("RUST_LOG").is_none() {
+        env::set_var("RUST_LOG", "video_buzzer=info");
+    }
+    pretty_env_logger::init();
+
     let routes =
         // Index, redirect to a video player
         path::end()
@@ -85,6 +93,8 @@ async fn main() {
                 )
             )
         );
+
+    let routes = routes.with(warp::log("video_buzzer"));
 
     eprintln!("Starting server on port {}", PORT);
     warp::serve(routes).run((Ipv4Addr::UNSPECIFIED, PORT)).await;

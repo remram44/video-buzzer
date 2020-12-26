@@ -10,3 +10,5 @@ futures = { version = "0.3", default-features = false, features = ["alloc"] }
 warp = "0.2"
 rand = "0.8"
 percent-encoding = "2"
+pretty_env_logger = "0.4"
+log = "0.4"
