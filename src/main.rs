@@ -1,7 +1,7 @@
 use futures::{FutureExt, StreamExt};
 use rand::Rng;
 use std::net::Ipv4Addr;
-use warp::{Filter, Reply};
+use warp::{Filter, Rejection, Reply};
 use warp::http::Uri;
 use warp::path;
 use warp::reply::with::header;
@@ -30,11 +30,12 @@ fn host_websocket(video_id: u32, ws: warp::ws::Ws) -> impl Reply {
     })
 }
 
-fn buzzer_websocket(video_id: u32, player_name: String, ws: warp::ws::Ws) -> impl Reply {
+async fn buzzer_websocket(video_id: u32, player_name: String, ws: warp::ws::Ws) -> Result<impl Reply, Rejection> {
+    let player_name = percent_encoding::percent_decode(player_name.as_bytes())
+        .decode_utf8()
+        .map_err(|_| warp::reject::not_found())?
+        .into_owned();
     Ok(ws.on_upgrade(move |ws| {
-        let player_name = percent_encoding::percent_decode(player_name.as_bytes())
-            .decode_utf8()
-            .expect("Invalid name"); // FIXME
         eprintln!("Video {}: player {:?} connected", video_id, player_name);
         // TODO: Buzzer channel
         let (tx, rx) = ws.split();
@@ -80,7 +81,7 @@ async fn main() {
                 .or(
                     warp::path!("buzzer" / u32 / String)
                         .and(warp::ws())
-                        .map(buzzer_websocket)
+                        .and_then(buzzer_websocket)
                 )
             )
         );
