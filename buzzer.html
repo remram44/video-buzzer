@@ -20,7 +20,14 @@ var wsProto = "wss:";
 if(window.location.protocol === "http:") {
   wsProto = "ws:";
 }
-var socket = new WebSocket(wsProto + "//" + window.location.host + "/api/buzzer/" + videoId + "/" + encodeURIComponent(name));
+var socket;
+function connect() {
+  console.log("Connecting...");
+  socket = new WebSocket(wsProto + "//" + window.location.host + "/api/buzzer/" + videoId + "/" + encodeURIComponent(name));
+  socket.addEventListener("open", function() { console.log("Connected"); });
+  socket.addEventListener("close", function() { setTimeout(connect, 2000); });
+}
+connect();
 
 // Buzz
 function buzz(e) {
