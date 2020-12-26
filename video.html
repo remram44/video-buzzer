@@ -1,20 +1,30 @@
 <!DOCTYPE html>
 <html>
   <head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1">
   </head>
   <body>
     <p>Join using this URL: <a id="joinurl" style="font-family: monospace; text-decoration: none;">...</a></p>
     <p><input type="file" id="selector" accept="video/*" /></p>
-    <p><video id="video" controls></video></p>
+    <button id="fullscreen">Fullscreen</button>
+    <div id="videocontainer" style="position: relative;">
+      <video id="video" controls style="position: relative; z-index: 0; object-fit: contain;" width="100%" height="100%"></video>
+      <div id="messagediv" style="position: absolute; z-index: 1; bottom: 10px; left: 0; right: 0; background-color: white; color: black; display: none;">
+        <p id="message" style="text-align: center;">MESSAGE</p>
+      </div>
+    </div>
     <ul id="players"></ul>
-    <p id="message"></p>
     <script>
 var currentPath = window.location.pathname; // "/video/1234"
 var videoId = currentPath.substring(7); // "1234"
 
+var videoContainer = document.getElementById("videocontainer");
 var videoPlayer = document.getElementById("video");
 var playerList = document.getElementById("players");
-var messageArea = document.getElementById("message");
+var messageArea = document.getElementById("messagediv");
+var messageElement = document.getElementById("message");
+var fullscreenButton = document.getElementById("fullscreen");
 
 // Select a local video
 var fileSelector = document.getElementById("selector");
@@ -31,6 +41,11 @@ function setVideo() {
 }
 
 fileSelector.addEventListener("change", setVideo);
+
+// Go fullscreen
+fullscreenButton.addEventListener("click", function() {
+  videoContainer.requestFullscreen();
+});
 
 // Show join URL
 var joinUrl = document.getElementById("joinurl");
@@ -54,7 +69,8 @@ function updatePlayers() {
 var pauseTimeout = undefined;
 
 function resume() {
-  messageArea.innerText = "";
+  messageElement.innerText = "";
+  messageArea.style.display = "none";
   videoPlayer.play();
   pauseTimeout = undefined;
 }
@@ -78,7 +94,8 @@ function connect() {
     } else if(e.data.startsWith("buzz ")) {
       if(pauseTimeout === undefined) {
         var name = e.data.substring(5);
-        messageArea.innerText = name + " buzzed!";
+        messageElement.innerText = name + " buzzed!";
+        messageArea.style.display = "";
         videoPlayer.pause();
         pauseTimeout = setTimeout(resume, 5000);
       }
