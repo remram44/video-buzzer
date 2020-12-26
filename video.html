@@ -5,22 +5,23 @@
   <body>
     <p>Join using this URL: <a id="joinurl" style="font-family: monospace; text-decoration: none;">...</a></p>
     <p><input type="file" id="selector" accept="video/*" /></p>
-    <p><video id="player" controls></video></p>
+    <p><video id="video" controls></video></p>
+    <ul id="players"></ul>
+    <p id="message"></p>
     <script>
 var currentPath = window.location.pathname; // "/video/1234"
 var videoId = currentPath.substring(7); // "1234"
 
-var videoPlayer = document.getElementById("player");
+var videoPlayer = document.getElementById("video");
+var playerList = document.getElementById("players");
+var messageArea = document.getElementById("message");
 
 // Select a local video
 var fileSelector = document.getElementById("selector");
 function setVideo() {
   var file = fileSelector.files[0];
-  console.log(file);
   var videoType = file.type;
-  console.log(videoType);
   var canPlay = videoPlayer.canPlayType(videoType);
-  console.log(canPlay);
   if(canPlay === "" || canPlay === "no") {
     alert("Video format not supported");
     return;
@@ -37,6 +38,27 @@ var url = window.location.protocol + "//" + window.location.host + "/" + videoId
 joinUrl.innerText = url;
 joinUrl.href = url;
 
+// Player list
+players = {};
+function updatePlayers() {
+  playerList.innerHTML = "";
+  var names = Object.keys(players);
+  names.sort();
+  for(var i = 0; i < names.length; ++i) {
+    var elem = document.createElement("li");
+    elem.innerText = names[i];
+    playerList.appendChild(elem);
+  }
+}
+
+var pauseTimeout = undefined;
+
+function resume() {
+  messageArea.innerText = "";
+  videoPlayer.play();
+  pauseTimeout = undefined;
+}
+
 // Receive buzzes
 var wsProto = "wss:";
 if(window.location.protocol === "http:") {
@@ -49,6 +71,18 @@ function connect() {
   socket.addEventListener("open", function() { console.log("Connected"); });
   socket.addEventListener("message", function(e) {
     console.log("Message: ", e.data);
+    if(e.data.startsWith("join ")) {
+      var name = e.data.substring(5);
+      players[name] = {};
+      updatePlayers();
+    } else if(e.data.startsWith("buzz ")) {
+      if(pauseTimeout === undefined) {
+        var name = e.data.substring(5);
+        messageArea.innerText = name + " buzzed!";
+        videoPlayer.pause();
+        pauseTimeout = setTimeout(resume, 5000);
+      }
+    }
   });
   socket.addEventListener("close", function() { setTimeout(connect, 2000); });
 }
