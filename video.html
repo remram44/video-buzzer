@@ -49,9 +49,8 @@ fullscreenButton.addEventListener("click", function() {
 
 // Show join URL
 var joinUrl = document.getElementById("joinurl");
-var url = window.location.protocol + "//" + window.location.host + "/" + videoId;
-joinUrl.innerText = url;
-joinUrl.href = url;
+joinUrl.innerText = window.location.host + "/" + videoId;
+joinUrl.href = window.location.protocol + "//" + window.location.host + "/" + videoId;
 
 // Player list
 players = {};
