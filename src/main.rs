@@ -1,3 +1,4 @@
+use futures::{FutureExt, StreamExt};
 use std::net::Ipv4Addr;
 use warp::Filter;
 use warp::path;
@@ -31,12 +32,37 @@ async fn main() {
         )
         // API
         .or(
-            warp::path!("api" / "join" / u32 / String)
-                .map(|_, _| b"{}" as &[u8]) // TODO: Player (re)joined
-        )
-        .or(
-            warp::path!("api" / "buzz" / u32 / String)
-                .map(|_, _| b"{}" as &[u8]) // TODO: Player buzzed
+            warp::path("api").and(
+                // Video player WebSocket
+                warp::path!("host" / u32)
+                    .and(warp::ws())
+                    .map(|video_id, ws: warp::ws::Ws| {
+                        ws.on_upgrade(|ws| {
+                            // TODO: Video channel
+                            let (tx, rx) = ws.split();
+                            rx.forward(tx).map(|result| {
+                                if let Err(e) = result {
+                                    eprintln!("websocket error: {:?}", e);
+                                }
+                            })
+                        })
+                    })
+                .or(
+                    warp::path!("buzzer" / u32 / String)
+                        .and(warp::ws())
+                        .map(|video_id, player_name, ws: warp::ws::Ws| {
+                            ws.on_upgrade(|ws| {
+                                // TODO: Buzzer channel
+                                let (tx, rx) = ws.split();
+                                rx.forward(tx).map(|result| {
+                                    if let Err(e) = result {
+                                        eprintln!("websocket error: {:?}", e);
+                                    }
+                                })
+                            })
+                        })
+                )
+            )
         );
 
     eprintln!("Starting server on port {}", PORT);

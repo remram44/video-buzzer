@@ -6,4 +6,5 @@ edition = "2018"
 
 [dependencies]
 tokio = { version = "0.2", features = ["macros"] }
+futures = { version = "0.3", default-features = false, features = ["alloc"] }
 warp = "0.2"
