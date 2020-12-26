@@ -3,6 +3,8 @@ Video Buzzer
 
 This is a couch gaming system for television shows. It is a video player (that you should display on your TV) that allows players to buzz from their smartphone, which pauses the video.
 
+![screenshot](screenshot.jpg)
+
 The workflow is as follow:
 
 * Navigate to the application on your smart TV (or a computer hooked to the TV)
