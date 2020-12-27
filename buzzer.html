@@ -3,9 +3,18 @@
   <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1">
+    <link rel="stylesheet" type="text/css" href="css/bootstrap.min.css">
+    <link rel="stylesheet" type="text/css" href="css/custom.css">
   </head>
   <body>
-    <p><button id="buzzer" style="width: 80vw; height: 80vh;">Buzz!</button></p>
+
+    <main role="main" class="container">
+      <h1>Use your buzzer!</h1>
+      <div class="text-center">
+        <button id="buzzer" type="button" class="btn btn-primary btn-large rounded-circle">BUZZ!</button>
+      </div>
+    </main>
+
     <script>
 var currentPath = window.location.pathname; // "/buzz/1234/John+Doe"
 var match = currentPath.match(new RegExp("^/buzz/([0-9]+)/(.+)$"));

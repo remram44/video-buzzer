@@ -1,0 +1,35 @@
+a#joinurl {
+    font-size: large;
+}
+
+p#message {
+    text-align: center;
+    font-size: 500%;
+}
+
+div#messagediv {
+    position: absolute;
+    z-index: 1;
+    bottom: 10px;
+    left: 0;
+    right: 0;
+    background-color: white;
+    color: black;
+    display: none;
+}
+
+button#buzzer {
+    padding: 15px 150px;
+    font-size: 1000%;
+    line-height: 4;
+}
+
+video#video {
+    position: relative;
+    z-index: 0;
+    object-fit: contain;
+}
+
+video::-webkit-media-controls-fullscreen-button {
+    display: none !important;
+}
