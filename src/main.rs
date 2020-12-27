@@ -10,6 +10,8 @@ use warp::http::Uri;
 use warp::path;
 use warp::reply::with::header;
 
+mod files;
+
 const PORT: u16 = 8000;
 
 enum Event {
@@ -198,19 +200,22 @@ async fn main() {
         // Video player
         .or(
             warp::path!("video" / u32)
-                .map(|_| include_bytes!("../video.html") as &[u8])
+                .map(|_| ()).untuple_one()
+                .and(files::video())
                 .with(header("Content-Type", "text/html; charset=utf-8"))
         )
         // Buzzer join URL
         .or(
             warp::path!(u32)
-                .map(|_| include_bytes!("../join.html") as &[u8])
+                .map(|_| ()).untuple_one()
+                .and(files::join())
                 .with(header("Content-Type", "text/html; charset=utf-8"))
         )
         // Buzzer view
         .or(
             warp::path!("buzz" / u32 / String)
-                .map(|_, _| include_bytes!("../buzzer.html") as &[u8])
+                .map(|_, _| ()).untuple_one()
+                .and(files::buzzer())
                 .with(header("Content-Type", "text/html; charset=utf-8"))
         )
         // API
