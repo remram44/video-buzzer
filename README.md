@@ -26,7 +26,7 @@ Status
 * [x] Can join a game and buzz
 * [x] Buzzing stops the video, displays name of player
 * [x] Allow full-screening video, make buzzer big
-* [ ] Make interface pretty and user-friendly
+* [x] Make interface pretty and user-friendly
 
 How to run
 ----------
