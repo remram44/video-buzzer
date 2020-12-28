@@ -1,0 +1,75 @@
+h1 {
+    text-align: center;
+}
+
+a#joinurl {
+    font-size: large;
+}
+
+p#message {
+    text-align: center;
+    font-size: 500%;
+}
+
+div#messagediv {
+    position: absolute;
+    z-index: 1;
+    bottom: 10px;
+    left: 0;
+    right: 0;
+    background-color: white;
+    color: black;
+    display: none;
+}
+
+div#buzzercontainer {
+    position: relative;
+    width: 100%;
+}
+
+div#buzzercontainer:before {
+    content: "";
+    float: left;
+    padding-top: 100%;
+}
+
+div#buzzercontainer button#buzzer {
+    float: left;
+}
+
+div#buzzercontainer {
+    display: flex;
+}
+
+button#buzzer {
+    font-size: 12vw;
+    line-height: 4;
+    flex-grow: 1;
+}
+
+@media (min-width:768px){
+    main.container {
+        max-width: 540px;
+    }
+    div#buzzercontainer {
+        max-width: 540px;
+        max-height: 540px;
+    }
+    button#buzzer {
+        font-size: 80px;
+    }
+}
+
+div#videocontainer {
+    position: relative;
+}
+
+video#video {
+    position: relative;
+    z-index: 0;
+    object-fit: contain;
+}
+
+video::-webkit-media-controls-fullscreen-button {
+    display: none !important;
+}

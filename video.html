@@ -3,18 +3,33 @@
   <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1">
+    <link rel="stylesheet" type="text/css" href="/css/bootstrap.min.css">
+    <link rel="stylesheet" type="text/css" href="/css/custom.css">
   </head>
   <body>
-    <p>Join using this URL: <a id="joinurl" style="font-family: monospace; text-decoration: none; font-size: 150%;">...</a></p>
-    <p><input type="file" id="selector" accept="video/*" /></p>
-    <button id="fullscreen">Fullscreen</button>
-    <div id="videocontainer" style="position: relative;">
-      <video id="video" controls style="position: relative; z-index: 0; object-fit: contain;" width="100%" height="100%"></video>
-      <div id="messagediv" style="position: absolute; z-index: 1; bottom: 10px; left: 0; right: 0; background-color: white; color: black; display: none;">
-        <p id="message" style="text-align: center; font-size: 500%;"></p>
+
+    <main role="main" class="container mt-2">
+      <h1>Game Details</h1>
+
+      <p>Join using this URL: <code><a id="joinurl">...</a></code></p>
+
+      <div class="form-group">
+        <label for="exampleInputFile">Upload the game video</label>
+        <input type="file" id="selector" accept="video/*" class="form-control-file" aria-describedby="selector">
+        <small id="selector" class="form-text text-muted">You can only upload video files (e.g. <code>mp4</code>, <code>wav</code>,)</small>
       </div>
-    </div>
-    <ul id="players"></ul>
+
+      <button type="button" id="fullscreen" class="btn btn-primary btn-lg mb-2">Fullscreen</button>
+
+      <div id="videocontainer">
+        <video id="video" controls width="100%" height="100%"></video>
+        <div id="messagediv">
+          <p id="message"></p>
+        </div>
+      </div>
+      <ul id="players"></ul>
+
+    </main>
     <script>
 var currentPath = window.location.pathname; // "/video/1234"
 var videoId = currentPath.substring(7); // "1234"

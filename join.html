@@ -3,12 +3,26 @@
   <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1">
+    <link rel="stylesheet" type="text/css" href="/css/bootstrap.min.css">
+    <link rel="stylesheet" type="text/css" href="/css/custom.css">
   </head>
   <body>
-    <form id="nameform">
-      <input type="text" id="handle" />
-      <input type="submit" value="Join!" />
-    </form>
+
+    <main role="main" class="container">
+      <div class="d-flex justify-content-center align-items-center container ">
+
+        <form id="nameform">
+          <h1>Join the Game!</h1>
+          <div class="form-group">
+            <label for="handle">Type in your name:</label>
+            <input type="text" class="form-control" id="handle" placeholder="Your name">
+          </div>
+          <button type="submit" class="btn btn-primary btn-lg btn-block">Join!</button>
+        </form>
+
+      </div>
+    </main><!-- /.container -->
+
     <script>
 function join(e) {
   e.preventDefault();
