@@ -10,14 +10,17 @@ use warp::fs::{File, file};
 
 macro_rules! use_file {
     ($file:ident) => {
+        use_file!($file, concat!(stringify!($file), ".html"));
+    };
+    ($name:ident, $path:expr) => {
         #[cfg(not(debug_assertions))]
-        pub fn $file() -> impl Filter<Extract = (&'static [u8],), Error = Infallible> + Clone {
-            any().map(|| include_bytes!(concat!("../", stringify!($file), ".html")) as &[u8])
+        pub fn $name() -> impl Filter<Extract = (&'static [u8],), Error = Infallible> + Clone {
+            any().map(|| include_bytes!(concat!("../", $path)) as &[u8])
         }
 
         #[cfg(debug_assertions)]
-        pub fn $file() -> impl Filter<Extract = (File,), Error = Rejection> + Clone {
-            file(concat!(stringify!($file), ".html"))
+        pub fn $name() -> impl Filter<Extract = (File,), Error = Rejection> + Clone {
+            file($path)
         }
     };
 }
@@ -25,3 +28,5 @@ macro_rules! use_file {
 use_file!(video);
 use_file!(join);
 use_file!(buzzer);
+use_file!(css_bootstrap, "css/bootstrap.min.css");
+use_file!(css_custom, "css/custom.css");

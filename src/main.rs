@@ -218,6 +218,18 @@ async fn main() {
                 .and(files::buzzer())
                 .with(header("Content-Type", "text/html; charset=utf-8"))
         )
+        // CSS files
+        .or(
+            warp::path("css").and(
+                warp::path("bootstrap.min.css")
+                    .and(files::css_bootstrap())
+                .or(
+                    warp::path("custom.css")
+                        .and(files::css_custom())
+                )
+            )
+            .with(header("Content-Type", "text/css"))
+        )
         // API
         .or(
             warp::path("api").and(
