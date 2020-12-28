@@ -24,6 +24,10 @@ button#buzzer {
     line-height: 4;
 }
 
+div#videocontainer {
+    position: relative;
+}
+
 video#video {
     position: relative;
     z-index: 0;
