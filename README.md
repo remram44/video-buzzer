@@ -25,4 +25,14 @@ Status
 * [x] Can play a video file
 * [x] Can join a game and buzz
 * [x] Buzzing stops the video, displays name of player
-* [ ] Make interface pretty, stretch video to window, make it mobile-friendly
+* [x] Allow full-screening video, make buzzer big
+* [ ] Make interface pretty and user-friendly
+
+How to run
+----------
+
+You can use the app by going to https://buzzer.remram.fr/.
+
+If you want to deploy it for yourself, build it using `cargo build --release` (you will need the [Rust compiler](https://www.rust-lang.org/tools/install)). This will make an executable `target/release/video-buzzer` which you can run on your server.
+
+To run the app in development mode, you can use `cargo run` (you will need the [Rust compiler](https://www.rust-lang.org/tools/install)). In this mode, the HTML/CSS files are served from disk, allowing you to test changes without rebuilding. If you have [cargo-watch](https://crates.io/crates/cargo-watch) installed, you can use `cargo watch -w src -x run` to have the server rebuild and restart when you change the Rust sources.
