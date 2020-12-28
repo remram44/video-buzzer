@@ -1,3 +1,7 @@
+h1 {
+    text-align: center;
+}
+
 a#joinurl {
     font-size: large;
 }
@@ -18,10 +22,42 @@ div#messagediv {
     display: none;
 }
 
+div#buzzercontainer {
+    position: relative;
+    width: 100%;
+}
+
+div#buzzercontainer:before {
+    content: "";
+    float: left;
+    padding-top: 100%;
+}
+
+div#buzzercontainer button#buzzer {
+    float: left;
+}
+
+div#buzzercontainer {
+    display: flex;
+}
+
 button#buzzer {
-    padding: 15px 150px;
-    font-size: 1000%;
+    font-size: 12vw;
     line-height: 4;
+    flex-grow: 1;
+}
+
+@media (min-width:768px){
+    main.container {
+        max-width: 540px;
+    }
+    div#buzzercontainer {
+        max-width: 540px;
+        max-height: 540px;
+    }
+    button#buzzer {
+        font-size: 80px;
+    }
 }
 
 div#videocontainer {
