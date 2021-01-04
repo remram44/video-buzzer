@@ -14,9 +14,13 @@
       <p>Join using this URL: <code><a id="joinurl">...</a></code></p>
 
       <div class="form-group">
-        <label for="exampleInputFile">Upload the game video</label>
-        <input type="file" id="selector" accept="video/*" class="form-control-file" aria-describedby="selector">
-        <small id="selector" class="form-text text-muted">You can only upload video files (e.g. <code>mp4</code>, <code>ogg</code>, ...)</small>
+        <p>Upload a game video:</p>
+        <input type="file" id="local-selector" accept="video/*" class="form-control-file">
+        <small class="form-text text-muted">You can only upload video files (e.g. <code>mp4</code>, <code>ogg</code>, ...)</small>
+      </div>
+      <div class="form-group">
+        <p>Or use a YouTube video:</p>
+        <form id="youtube-selector-form"><input type="text" id="youtube-selector" placeholder="https://www.youtube.com/watch?v=9g3--WYH8SY"></form>
       </div>
 
       <button type="button" id="fullscreen" class="btn btn-primary btn-lg mb-2">Fullscreen</button>
@@ -115,9 +119,18 @@ function showVideoFile(file) {
   };
 }
 
-var fileSelector = document.getElementById("selector");
+var fileSelector = document.getElementById("local-selector");
 fileSelector.addEventListener("change", function() {
   showVideoFile(fileSelector.files[0]);
+});
+
+var youtubeSelector = document.getElementById("youtube-selector");
+document.getElementById("youtube-selector-form").addEventListener("submit", function(e) {
+  e.preventDefault();
+  var m = youtubeSelector.value.match(new RegExp("(?:https?://)?(?:www\\.)?youtube\\.com/watch\\?v=([^/]+)"));
+  if(m) {
+    showYoutubeVideo(m[1]);
+  }
 });
 
 // Go fullscreen
