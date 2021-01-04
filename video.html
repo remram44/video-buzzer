@@ -22,7 +22,7 @@
       <button type="button" id="fullscreen" class="btn btn-primary btn-lg mb-2">Fullscreen</button>
 
       <div id="videocontainer">
-        <video id="video" controls width="100%" height="100%"></video>
+        <div id="video"></div>
         <div id="messagediv" style="display: none;">
           <p id="message"></p>
         </div>
@@ -31,31 +31,94 @@
 
     </main>
     <script>
+// Load YouTube API
+// YouTube API uses a callback, adapt this to a Promise
+var youtubeLoaded = new Promise(function(resolve, reject) {
+  window.onYouTubeIframeAPIReady = function() { resolve(); };
+});
+var youtubeLoading = false;
+function loadYoutube() {
+  if(!youtubeLoading) {
+    var youtubeJs = document.createElement("script");
+    youtubeJs.src = "https://www.youtube.com/iframe_api";
+    document.body.appendChild(youtubeJs);
+    youtubeLoading = true;
+  }
+  return youtubeLoaded;
+}
+
 var currentPath = window.location.pathname; // "/video/1234"
 var videoId = currentPath.substring(7); // "1234"
 
 var videoContainer = document.getElementById("videocontainer");
-var videoPlayer = document.getElementById("video");
+var videoPlayer = undefined;
 var playerList = document.getElementById("players");
 var messageArea = document.getElementById("messagediv");
 var messageElement = document.getElementById("message");
 var fullscreenButton = document.getElementById("fullscreen");
 
-// Select a local video
-var fileSelector = document.getElementById("selector");
-function setVideo() {
-  var file = fileSelector.files[0];
+function showYoutubeVideo(youtubeId) {
+  // Replace existing element with a div
+  var oldVideo = document.getElementById("video");
+  var newVideo = document.createElement("div");
+  newVideo.setAttribute("id", "video");
+  oldVideo.parentNode.replaceChild(newVideo, oldVideo);
+
+  // Load video, set videoPlayer when done
+  return loadYoutube().then(function() {
+    var yt = new YT.Player("video", {
+      height: "100%",
+      width: "100%",
+      videoId: youtubeId,
+      events: {
+        onReady: function() {
+          videoPlayer = {
+            play: function() {
+              yt.playVideo();
+            },
+            pause: function() {
+              yt.pauseVideo();
+            },
+          };
+        },
+      },
+    });
+  });
+}
+
+// Show a video file
+function showVideoFile(file) {
   var videoType = file.type;
-  var canPlay = videoPlayer.canPlayType(videoType);
+  var videoElement = document.createElement("video");
+  videoElement.setAttribute("id", "video");
+  videoElement.setAttribute("controls", true);
+  videoElement.setAttribute("width", "100%");
+  videoElement.setAttribute("height", "100%");
+  var canPlay = videoElement.canPlayType(videoType);
   if(canPlay === "" || canPlay === "no") {
     alert("Video format not supported");
     return;
   }
   var fileURL = URL.createObjectURL(file);
-  videoPlayer.src = fileURL;
+  videoElement.src = fileURL;
+  var oldVideo = document.getElementById("video");
+  oldVideo.parentNode.replaceChild(videoElement, oldVideo);
+
+  // Set videoPlayer
+  videoPlayer = {
+    play: function() {
+      videoElement.play();
+    },
+    pause: function() {
+      videoElement.pause();
+    },
+  };
 }
 
-fileSelector.addEventListener("change", setVideo);
+var fileSelector = document.getElementById("selector");
+fileSelector.addEventListener("change", function() {
+  showVideoFile(fileSelector.files[0]);
+});
 
 // Go fullscreen
 fullscreenButton.addEventListener("click", function() {
