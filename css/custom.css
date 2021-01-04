@@ -6,6 +6,10 @@ a#joinurl {
     font-size: large;
 }
 
+li.empty {
+    font-style: oblique;
+}
+
 p#message {
     text-align: center;
     font-size: 500%;
