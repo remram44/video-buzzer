@@ -11,22 +11,32 @@
     <main role="main" class="container mt-2">
       <h1>Game Details</h1>
 
-      <p>Join using this URL: <code><a id="joinurl">...</a></code></p>
+      <h2>1. Pick a video:</h2>
 
-      <div class="form-group">
-        <p>Upload a game video:</p>
-        <input type="file" id="local-selector" accept="video/*" class="form-control-file">
-        <small class="form-text text-muted">You can only upload video files (e.g. <code>mp4</code>, <code>ogg</code>, ...)</small>
+      <div class="form-group row">
+        <label for="local-selector" class="col-sm-3">Use a local file:</label>
+        <div class="col-sm-9">
+          <input type="file" id="local-selector" accept="video/*" class="form-control-file">
+          <small class="form-text text-muted">You can only upload video files (e.g. <code>mp4</code>, <code>ogg</code>, ...)</small>
+        </div>
       </div>
-      <div class="form-group">
-        <p>Or use a YouTube video:</p>
-        <form id="youtube-selector-form"><input type="text" id="youtube-selector" placeholder="https://www.youtube.com/watch?v=9g3--WYH8SY"></form>
-      </div>
+      <form id="youtube-selector-form">
+        <div class="form-group row">
+          <label for="youtube-selector" class="col-sm-3">Or use a YouTube video:</label>
+          <input type="text" id="youtube-selector" class="form-control col-sm-9" placeholder="https://www.youtube.com/watch?v=9g3--WYH8SY">
+        </div>
+      </form>
+
+      <h2>2. Join using your phones by typing this URL:</h2>
+
+      <p><code><a id="joinurl">...</a></code></p>
+
+      <h2>3. Click the "fullscreen" button</h2>
 
       <button type="button" id="fullscreen" class="btn btn-primary btn-lg mb-2">Fullscreen</button>
 
       <div id="videocontainer">
-        <div id="video"></div>
+        <div id="video">Pick a video above...</div>
         <div id="messagediv" style="display: none;">
           <p id="message"></p>
         </div>
