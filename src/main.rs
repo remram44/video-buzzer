@@ -34,6 +34,10 @@ impl<T> TempSet<T> {
     fn iter(&self) -> std::collections::hash_map::Values<u32, T> {
         self.set.values()
     }
+
+    fn is_empty(&self) -> bool {
+        self.set.is_empty()
+    }
 }
 
 impl<T> Default for TempSet<T> {
@@ -70,6 +74,13 @@ struct VideoRoom {
     channels: TempSet<futures::channel::mpsc::UnboundedSender<Event>>,
     /// List of players currently in this room
     players: HashMap<String, Player>,
+}
+
+impl VideoRoom {
+    fn is_empty(&self) -> bool {
+        // The room is empty if it has no host and no player
+        self.channels.is_empty() && self.players.values().all(|p| p.connected_channels == 0)
+    }
 }
 
 type Rooms = Arc<Mutex<HashMap<u32, VideoRoom>>>;
@@ -139,6 +150,12 @@ fn host_websocket(
                 let mut rooms = rooms.lock().unwrap();
                 let room = rooms.get_mut(&video_id).unwrap();
                 room.channels.remove(chan_id);
+
+                // No one left, free memory
+                if room.is_empty() {
+                    info!("Video {}: empty, removing", video_id);
+                    rooms.remove(&video_id);
+                }
             }
         }
     })
@@ -222,6 +239,12 @@ async fn buzzer_websocket(
 
                 let player = room.players.entry(player_name.clone()).or_default();
                 player.connected_channels -= 1;
+
+                // No one left, free memory
+                if room.is_empty() {
+                    info!("Video {}: empty, removing", video_id);
+                    rooms.remove(&video_id);
+                }
             }
         }
     }))
