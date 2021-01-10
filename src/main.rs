@@ -1,4 +1,4 @@
-use futures::{FutureExt, SinkExt, StreamExt};
+use futures::{SinkExt, StreamExt};
 use log::{info, warn};
 use rand::Rng;
 use std::collections::hash_map::{Entry, HashMap};
@@ -111,7 +111,7 @@ fn host_websocket(
             let (mut ws_tx, _ws_rx) = ws.split();
 
             // Create a channel to communicate with buzzers
-            let (chan_tx, chan_rx) = futures::channel::mpsc::unbounded();
+            let (chan_tx, mut chan_rx) = futures::channel::mpsc::unbounded();
 
             // Update room
             let (chan_id, players): (_, Vec<String>) = {
@@ -129,21 +129,21 @@ fn host_websocket(
             }
 
             // Forward from internal channel to WebSocket
-            chan_rx
-                .map(|msg| {
-                    let text = match msg {
-                        Event::PlayerJoined(player) => format!("join {}", player),
-                        Event::PlayerBuzzed(player) => format!("buzz {}", player),
-                    };
-                    Ok(warp::ws::Message::text(text))
-                })
-                .forward(ws_tx)
-                .map(move |result| {
-                    if let Err(e) = result {
+            while let Some(msg) = chan_rx.next().await {
+                let text = match msg {
+                    Event::PlayerJoined(player) => format!("join {}", player),
+                    Event::PlayerBuzzed(player) => format!("buzz {}", player),
+                };
+                match ws_tx.send(warp::ws::Message::text(text)).await {
+                    Err(e) => {
                         warn!("websocket error: {:?}", e);
+                        break;
                     }
-                    info!("Video {}: host disconnected", video_id);
-                }).await;
+                    _ => {}
+                }
+            }
+
+            info!("Video {}: host disconnected", video_id);
 
             // Remove channel now that connection is closed
             {
