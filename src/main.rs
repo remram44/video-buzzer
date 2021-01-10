@@ -14,6 +14,37 @@ mod files;
 
 const PORT: u16 = 8000;
 
+struct TempSet<T> {
+    next_id: u32,
+    set: HashMap<u32, T>,
+}
+
+impl<T> TempSet<T> {
+    fn add(&mut self, value: T) -> u32 {
+        let id = self.next_id;
+        self.next_id += 1;
+        self.set.insert(id, value);
+        id
+    }
+
+    fn remove(&mut self, id: u32) -> bool {
+        self.set.remove(&id).is_some()
+    }
+
+    fn iter(&self) -> std::collections::hash_map::Values<u32, T> {
+        self.set.values()
+    }
+}
+
+impl<T> Default for TempSet<T> {
+    fn default() -> TempSet<T> {
+        TempSet {
+            next_id: 0,
+            set: HashMap::new(),
+        }
+    }
+}
+
 /// Events sent to the video host
 enum Event {
     PlayerJoined(String),
@@ -36,7 +67,7 @@ impl Default for Player {
 #[derive(Default)]
 struct VideoRoom {
     /// Channels to video hosts in this room (usually just one)
-    channels: Vec<futures::channel::mpsc::UnboundedSender<Event>>,
+    channels: TempSet<futures::channel::mpsc::UnboundedSender<Event>>,
     /// List of players currently in this room
     players: HashMap<String, Player>,
 }
@@ -75,7 +106,7 @@ fn host_websocket(
             let players: Vec<String> = {
                 let mut rooms = rooms.lock().unwrap();
                 let room = rooms.entry(video_id).or_default();
-                room.channels.push(chan_tx);
+                room.channels.add(chan_tx);
                 room.players.keys().cloned().collect()
             };
 
@@ -134,7 +165,7 @@ async fn buzzer_websocket(
                         });
 
                         info!("(first connection, notify)");
-                        room.channels.clone()
+                        room.channels.iter().cloned().collect::<Vec<_>>()
                     }
                 }
             };
@@ -163,7 +194,7 @@ async fn buzzer_websocket(
                 let channels = {
                     let mut rooms = rooms.lock().unwrap();
                     let room = rooms.entry(video_id).or_default();
-                    room.channels.clone()
+                    room.channels.iter().cloned().collect::<Vec<_>>()
                 };
 
                 for mut chan in channels {
