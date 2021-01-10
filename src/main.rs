@@ -14,11 +14,13 @@ mod files;
 
 const PORT: u16 = 8000;
 
+/// Events sent to the video host
 enum Event {
     PlayerJoined(String),
     PlayerBuzzed(String),
 }
 
+/// Information about a player
 struct Player {
     connected_channels: u32,
 }
@@ -33,7 +35,9 @@ impl Default for Player {
 
 #[derive(Default)]
 struct VideoRoom {
+    /// Channels to video hosts in this room (usually just one)
     channels: Vec<futures::channel::mpsc::UnboundedSender<Event>>,
+    /// List of players currently in this room
     players: HashMap<String, Player>,
 }
 
@@ -95,7 +99,7 @@ fn host_websocket(
                         warn!("websocket error: {:?}", e);
                     }
                     info!("Video {}: host disconnected", video_id);
-                }).await
+                }).await;
         }
     })
 }
