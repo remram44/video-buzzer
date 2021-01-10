@@ -103,11 +103,13 @@ fn host_websocket(
             let (chan_tx, chan_rx) = futures::channel::mpsc::unbounded();
 
             // Update room
-            let players: Vec<String> = {
+            let (chan_id, players): (_, Vec<String>) = {
                 let mut rooms = rooms.lock().unwrap();
                 let room = rooms.entry(video_id).or_default();
-                room.channels.add(chan_tx);
-                room.players.keys().cloned().collect()
+                (
+                    room.channels.add(chan_tx),
+                    room.players.keys().cloned().collect(),
+                )
             };
 
             // Send list of players
@@ -131,6 +133,13 @@ fn host_websocket(
                     }
                     info!("Video {}: host disconnected", video_id);
                 }).await;
+
+            // Remove channel now that connection is closed
+            {
+                let mut rooms = rooms.lock().unwrap();
+                let room = rooms.get_mut(&video_id).unwrap();
+                room.channels.remove(chan_id);
+            }
         }
     })
 }
