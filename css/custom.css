@@ -50,12 +50,12 @@ button#buzzer {
     flex-grow: 1;
 }
 
+main.container {
+  max-width: 960px;
+}
 @media (min-width:768px){
-    main.container {
-        max-width: 540px;
-    }
     div#buzzercontainer {
-        max-width: 540px;
+        max-width: 960px;
         max-height: 540px;
     }
     button#buzzer {

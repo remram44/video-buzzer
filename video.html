@@ -11,18 +11,32 @@
     <main role="main" class="container mt-2">
       <h1>Game Details</h1>
 
-      <p>Join using this URL: <code><a id="joinurl">...</a></code></p>
+      <h2>1. Pick a video:</h2>
 
-      <div class="form-group">
-        <label for="exampleInputFile">Upload the game video</label>
-        <input type="file" id="selector" accept="video/*" class="form-control-file" aria-describedby="selector">
-        <small id="selector" class="form-text text-muted">You can only upload video files (e.g. <code>mp4</code>, <code>ogg</code>, ...)</small>
+      <div class="form-group row">
+        <label for="local-selector" class="col-sm-3">Use a local file:</label>
+        <div class="col-sm-9">
+          <input type="file" id="local-selector" accept="video/*" class="form-control-file">
+          <small class="form-text text-muted">You can only upload video files (e.g. <code>mp4</code>, <code>ogg</code>, ...)</small>
+        </div>
       </div>
+      <form id="youtube-selector-form">
+        <div class="form-group row">
+          <label for="youtube-selector" class="col-sm-3">Or use a YouTube video:</label>
+          <input type="text" id="youtube-selector" class="form-control col-sm-9" placeholder="https://www.youtube.com/watch?v=9g3--WYH8SY">
+        </div>
+      </form>
+
+      <h2>2. Join using your phones by typing this URL:</h2>
+
+      <p><code><a id="joinurl">...</a></code></p>
+
+      <h2>3. Click the "fullscreen" button</h2>
 
       <button type="button" id="fullscreen" class="btn btn-primary btn-lg mb-2">Fullscreen</button>
 
       <div id="videocontainer">
-        <video id="video" controls width="100%" height="100%"></video>
+        <div id="video">Pick a video above...</div>
         <div id="messagediv" style="display: none;">
           <p id="message"></p>
         </div>
@@ -34,31 +48,103 @@
 
     </main>
     <script>
+// Load YouTube API
+// YouTube API uses a callback, adapt this to a Promise
+var youtubeLoaded = new Promise(function(resolve, reject) {
+  window.onYouTubeIframeAPIReady = function() { resolve(); };
+});
+var youtubeLoading = false;
+function loadYoutube() {
+  if(!youtubeLoading) {
+    var youtubeJs = document.createElement("script");
+    youtubeJs.src = "https://www.youtube.com/iframe_api";
+    document.body.appendChild(youtubeJs);
+    youtubeLoading = true;
+  }
+  return youtubeLoaded;
+}
+
 var currentPath = window.location.pathname; // "/video/1234"
 var videoId = currentPath.substring(7); // "1234"
 
 var videoContainer = document.getElementById("videocontainer");
-var videoPlayer = document.getElementById("video");
+var videoPlayer = undefined;
 var playerList = document.getElementById("players");
 var messageArea = document.getElementById("messagediv");
 var messageElement = document.getElementById("message");
 var fullscreenButton = document.getElementById("fullscreen");
 
-// Select a local video
-var fileSelector = document.getElementById("selector");
-function setVideo() {
-  var file = fileSelector.files[0];
+function showYoutubeVideo(youtubeId) {
+  // Replace existing element with a div
+  var oldVideo = document.getElementById("video");
+  var newVideo = document.createElement("div");
+  newVideo.setAttribute("id", "video");
+  oldVideo.parentNode.replaceChild(newVideo, oldVideo);
+
+  // Load video, set videoPlayer when done
+  return loadYoutube().then(function() {
+    var yt = new YT.Player("video", {
+      height: "100%",
+      width: "100%",
+      videoId: youtubeId,
+      events: {
+        onReady: function() {
+          videoPlayer = {
+            play: function() {
+              yt.playVideo();
+            },
+            pause: function() {
+              yt.pauseVideo();
+            },
+          };
+        },
+      },
+    });
+  });
+}
+
+// Show a video file
+function showVideoFile(file) {
   var videoType = file.type;
-  var canPlay = videoPlayer.canPlayType(videoType);
+  var videoElement = document.createElement("video");
+  videoElement.setAttribute("id", "video");
+  videoElement.setAttribute("controls", true);
+  videoElement.setAttribute("width", "100%");
+  videoElement.setAttribute("height", "100%");
+  var canPlay = videoElement.canPlayType(videoType);
   if(canPlay === "" || canPlay === "no") {
     alert("Video format not supported");
     return;
   }
   var fileURL = URL.createObjectURL(file);
-  videoPlayer.src = fileURL;
+  videoElement.src = fileURL;
+  var oldVideo = document.getElementById("video");
+  oldVideo.parentNode.replaceChild(videoElement, oldVideo);
+
+  // Set videoPlayer
+  videoPlayer = {
+    play: function() {
+      videoElement.play();
+    },
+    pause: function() {
+      videoElement.pause();
+    },
+  };
 }
 
-fileSelector.addEventListener("change", setVideo);
+var fileSelector = document.getElementById("local-selector");
+fileSelector.addEventListener("change", function() {
+  showVideoFile(fileSelector.files[0]);
+});
+
+var youtubeSelector = document.getElementById("youtube-selector");
+document.getElementById("youtube-selector-form").addEventListener("submit", function(e) {
+  e.preventDefault();
+  var m = youtubeSelector.value.match(new RegExp("(?:https?://)?(?:www\\.)?youtube\\.com/watch\\?v=([^/]+)"));
+  if(m) {
+    showYoutubeVideo(m[1]);
+  }
+});
 
 // Go fullscreen
 fullscreenButton.addEventListener("click", function() {
