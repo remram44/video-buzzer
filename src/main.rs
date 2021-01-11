@@ -1,4 +1,5 @@
-use futures::{FutureExt, SinkExt, StreamExt};
+use futures::{SinkExt, StreamExt};
+use futures::select;
 use log::{info, warn};
 use rand::Rng;
 use std::collections::hash_map::{Entry, HashMap};
@@ -13,6 +14,41 @@ use warp::reply::with::header;
 mod files;
 
 const PORT: u16 = 8000;
+
+struct TempSet<T> {
+    next_id: u32,
+    set: HashMap<u32, T>,
+}
+
+impl<T> TempSet<T> {
+    fn add(&mut self, value: T) -> u32 {
+        let id = self.next_id;
+        self.next_id += 1;
+        self.set.insert(id, value);
+        id
+    }
+
+    fn remove(&mut self, id: u32) -> bool {
+        self.set.remove(&id).is_some()
+    }
+
+    fn iter(&self) -> std::collections::hash_map::Values<u32, T> {
+        self.set.values()
+    }
+
+    fn is_empty(&self) -> bool {
+        self.set.is_empty()
+    }
+}
+
+impl<T> Default for TempSet<T> {
+    fn default() -> TempSet<T> {
+        TempSet {
+            next_id: 0,
+            set: HashMap::new(),
+        }
+    }
+}
 
 /// Events sent to the video host
 enum Event {
@@ -36,9 +72,16 @@ impl Default for Player {
 #[derive(Default)]
 struct VideoRoom {
     /// Channels to video hosts in this room (usually just one)
-    channels: Vec<futures::channel::mpsc::UnboundedSender<Event>>,
+    channels: TempSet<futures::channel::mpsc::UnboundedSender<Event>>,
     /// List of players currently in this room
     players: HashMap<String, Player>,
+}
+
+impl VideoRoom {
+    fn is_empty(&self) -> bool {
+        // The room is empty if it has no host and no player
+        self.channels.is_empty() && self.players.values().all(|p| p.connected_channels == 0)
+    }
 }
 
 type Rooms = Arc<Mutex<HashMap<u32, VideoRoom>>>;
@@ -66,17 +109,19 @@ fn host_websocket(
         info!("Video {}: host connected", video_id);
 
         async move {
-            let (mut ws_tx, _ws_rx) = ws.split();
+            let (mut ws_tx, ws_rx) = ws.split();
 
             // Create a channel to communicate with buzzers
-            let (chan_tx, chan_rx) = futures::channel::mpsc::unbounded();
+            let (chan_tx, mut chan_rx) = futures::channel::mpsc::unbounded();
 
             // Update room
-            let players: Vec<String> = {
+            let (chan_id, players): (_, Vec<String>) = {
                 let mut rooms = rooms.lock().unwrap();
                 let room = rooms.entry(video_id).or_default();
-                room.channels.push(chan_tx);
-                room.players.keys().cloned().collect()
+                (
+                    room.channels.add(chan_tx),
+                    room.players.keys().cloned().collect(),
+                )
             };
 
             // Send list of players
@@ -84,22 +129,52 @@ fn host_websocket(
                 let _ = ws_tx.send(warp::ws::Message::text(format!("join {}", player_name))).await;
             }
 
-            // Forward from internal channel to WebSocket
-            chan_rx
-                .map(|msg| {
-                    let text = match msg {
-                        Event::PlayerJoined(player) => format!("join {}", player),
-                        Event::PlayerBuzzed(player) => format!("buzz {}", player),
-                    };
-                    Ok(warp::ws::Message::text(text))
-                })
-                .forward(ws_tx)
-                .map(move |result| {
-                    if let Err(e) = result {
-                        warn!("websocket error: {:?}", e);
-                    }
-                    info!("Video {}: host disconnected", video_id);
-                }).await;
+            // Forward from internal channel to WebSocket, until WebSocket closes
+            let mut ws_rx = ws_rx.fuse();
+            loop {
+                select! {
+                    msg = chan_rx.next() => match msg {
+                        // Message from channel, send it on WebSocket
+                        Some(msg) => {
+                            let text = match msg {
+                                Event::PlayerJoined(player) => format!("join {}", player),
+                                Event::PlayerBuzzed(player) => format!("buzz {}", player),
+                            };
+                            match ws_tx.send(warp::ws::Message::text(text)).await {
+                                Err(e) => {
+                                    warn!("websocket error: {:?}", e);
+                                    break;
+                                }
+                                _ => {}
+                            }
+                        }
+                        // Channel is closed
+                        None => panic!("Internal channel was closed"),
+                    },
+                    msg = ws_rx.next() => match msg {
+                        // Message from WebSocket, ignore
+                        Some(_) => {}
+                        // WebSocket is closed
+                        None => {
+                            info!("Video {}: host disconnected", video_id);
+                            break;
+                        }
+                    },
+                }
+            }
+
+            // Remove channel now that connection is closed
+            {
+                let mut rooms = rooms.lock().unwrap();
+                let room = rooms.get_mut(&video_id).unwrap();
+                room.channels.remove(chan_id);
+
+                // No one left, free memory
+                if room.is_empty() {
+                    info!("Video {}: empty, removing", video_id);
+                    rooms.remove(&video_id);
+                }
+            }
         }
     })
 }
@@ -134,7 +209,7 @@ async fn buzzer_websocket(
                         });
 
                         info!("(first connection, notify)");
-                        room.channels.clone()
+                        room.channels.iter().cloned().collect::<Vec<_>>()
                     }
                 }
             };
@@ -163,7 +238,7 @@ async fn buzzer_websocket(
                 let channels = {
                     let mut rooms = rooms.lock().unwrap();
                     let room = rooms.entry(video_id).or_default();
-                    room.channels.clone()
+                    room.channels.iter().cloned().collect::<Vec<_>>()
                 };
 
                 for mut chan in channels {
@@ -182,6 +257,12 @@ async fn buzzer_websocket(
 
                 let player = room.players.entry(player_name.clone()).or_default();
                 player.connected_channels -= 1;
+
+                // No one left, free memory
+                if room.is_empty() {
+                    info!("Video {}: empty, removing", video_id);
+                    rooms.remove(&video_id);
+                }
             }
         }
     }))
