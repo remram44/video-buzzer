@@ -1,5 +1,5 @@
 use futures::{SinkExt, StreamExt};
-use futures::future::Either;
+use futures::select;
 use log::{info, warn};
 use rand::Rng;
 use std::collections::hash_map::{Entry, HashMap};
@@ -109,7 +109,7 @@ fn host_websocket(
         info!("Video {}: host connected", video_id);
 
         async move {
-            let (mut ws_tx, mut ws_rx) = ws.split();
+            let (mut ws_tx, ws_rx) = ws.split();
 
             // Create a channel to communicate with buzzers
             let (chan_tx, mut chan_rx) = futures::channel::mpsc::unbounded();
@@ -130,35 +130,36 @@ fn host_websocket(
             }
 
             // Forward from internal channel to WebSocket, until WebSocket closes
+            let mut ws_rx = ws_rx.fuse();
             loop {
-                let either = futures::future::select(
-                    chan_rx.next(),
-                    ws_rx.next(),
-                ).await;
-                match either {
-                    // Message from channel, send it on WebSocket
-                    Either::Left((Some(msg), _)) => {
-                        let text = match msg {
-                            Event::PlayerJoined(player) => format!("join {}", player),
-                            Event::PlayerBuzzed(player) => format!("buzz {}", player),
-                        };
-                        match ws_tx.send(warp::ws::Message::text(text)).await {
-                            Err(e) => {
-                                warn!("websocket error: {:?}", e);
-                                break;
+                select! {
+                    msg = chan_rx.next() => match msg {
+                        // Message from channel, send it on WebSocket
+                        Some(msg) => {
+                            let text = match msg {
+                                Event::PlayerJoined(player) => format!("join {}", player),
+                                Event::PlayerBuzzed(player) => format!("buzz {}", player),
+                            };
+                            match ws_tx.send(warp::ws::Message::text(text)).await {
+                                Err(e) => {
+                                    warn!("websocket error: {:?}", e);
+                                    break;
+                                }
+                                _ => {}
                             }
-                            _ => {}
                         }
-                    }
-                    // Message from WebSocket, ignore
-                    Either::Right((Some(_msg), _)) => {}
-                    // Channel is closed
-                    Either::Left((None, _)) => panic!("Internal channel was closed"),
-                    // WebSocket is closed
-                    Either::Right((None, _)) => {
-                        info!("Video {}: host disconnected", video_id);
-                        break;
-                    }
+                        // Channel is closed
+                        None => panic!("Internal channel was closed"),
+                    },
+                    msg = ws_rx.next() => match msg {
+                        // Message from WebSocket, ignore
+                        Some(_) => {}
+                        // WebSocket is closed
+                        None => {
+                            info!("Video {}: host disconnected", video_id);
+                            break;
+                        }
+                    },
                 }
             }
 
