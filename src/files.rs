@@ -1,12 +1,12 @@
 #[cfg(not(debug_assertions))]
 use std::convert::Infallible;
-use warp::Filter;
-#[cfg(debug_assertions)]
-use warp::Rejection;
 #[cfg(not(debug_assertions))]
 use warp::filters::any::any;
 #[cfg(debug_assertions)]
-use warp::fs::{File, file};
+use warp::fs::{file, File};
+use warp::Filter;
+#[cfg(debug_assertions)]
+use warp::Rejection;
 
 macro_rules! use_file {
     ($file:ident) => {

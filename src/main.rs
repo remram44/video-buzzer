@@ -1,15 +1,15 @@
-use futures::{SinkExt, StreamExt};
 use futures::select;
+use futures::{SinkExt, StreamExt};
 use log::{info, warn};
 use rand::Rng;
 use std::collections::hash_map::{Entry, HashMap};
 use std::env;
 use std::net::Ipv4Addr;
 use std::sync::{Arc, Mutex};
-use warp::{Filter, Rejection, Reply};
 use warp::http::Uri;
 use warp::path;
 use warp::reply::with::header;
+use warp::{Filter, Rejection, Reply};
 
 mod files;
 
@@ -63,7 +63,7 @@ struct Player {
 
 impl Default for Player {
     fn default() -> Player {
-        Player{
+        Player {
             connected_channels: 0,
         }
     }
@@ -80,14 +80,17 @@ struct VideoRoom {
 impl VideoRoom {
     fn is_empty(&self) -> bool {
         // The room is empty if it has no host and no player
-        self.channels.is_empty() && self.players.values().all(|p| p.connected_channels == 0)
+        self.channels.is_empty()
+            && self.players.values().all(|p| p.connected_channels == 0)
     }
 }
 
 type Rooms = Arc<Mutex<HashMap<u32, VideoRoom>>>;
 
-fn with_rooms(rooms: Rooms)
--> impl Filter<Extract = (Rooms,), Error = std::convert::Infallible> + Clone {
+fn with_rooms(
+    rooms: Rooms,
+) -> impl Filter<Extract = (Rooms,), Error = std::convert::Infallible>
+       + Clone {
     warp::any().map(move || rooms.clone())
 }
 
@@ -126,10 +129,14 @@ fn host_websocket(
 
             // Send list of players
             for player_name in players {
-                let _ = ws_tx.send(warp::ws::Message::text(format!("join {}", player_name))).await;
+                let _ = ws_tx
+                    .send(warp::ws::Message::text(
+                        format!("join {}", player_name),
+                    ))
+                    .await;
             }
 
-            // Forward from internal channel to WebSocket, until WebSocket closes
+            // Forward from channel to WebSocket, until WebSocket closes
             let mut ws_rx = ws_rx.fuse();
             loop {
                 select! {
@@ -137,10 +144,17 @@ fn host_websocket(
                         // Message from channel, send it on WebSocket
                         Some(msg) => {
                             let text = match msg {
-                                Event::PlayerJoined(player) => format!("join {}", player),
-                                Event::PlayerBuzzed(player) => format!("buzz {}", player),
+                                Event::PlayerJoined(player) => {
+                                    format!("join {}", player)
+                                }
+                                Event::PlayerBuzzed(player) => {
+                                    format!("buzz {}", player)
+                                }
                             };
-                            match ws_tx.send(warp::ws::Message::text(text)).await {
+                            match ws_tx
+                                .send(warp::ws::Message::text(text))
+                                .await
+                            {
                                 Err(e) => {
                                     warn!("websocket error: {:?}", e);
                                     break;
@@ -215,25 +229,27 @@ async fn buzzer_websocket(
             };
 
             for mut chan in notify_channels {
-                let _ = chan.send(Event::PlayerJoined(player_name.clone())).await;
+                let _ =
+                    chan.send(Event::PlayerJoined(player_name.clone())).await;
             }
 
             // Receive messages on WebSocket, forward to room
             let (_tx, mut rx) = ws.split();
             while let Some(msg) = rx.next().await {
                 let msg = match msg {
-                    Ok(ref m) => {
-                        match m.to_str() {
-                            Ok(s) => s,
-                            Err(_) => continue,
-                        }
-                    }
+                    Ok(ref m) => match m.to_str() {
+                        Ok(s) => s,
+                        Err(_) => continue,
+                    },
                     Err(e) => {
                         warn!("websocket error: {:?}", e);
                         break;
                     }
                 };
-                info!("Video {}: player {:?}: {:?}", video_id, player_name, msg);
+                info!(
+                    "Video {}: player {:?}: {:?}",
+                    video_id, player_name, msg
+                );
 
                 let channels = {
                     let mut rooms = rooms.lock().unwrap();
@@ -242,9 +258,9 @@ async fn buzzer_websocket(
                 };
 
                 for mut chan in channels {
-                    let _ = chan.send(
-                        Event::PlayerBuzzed(player_name.clone()),
-                    ).await;
+                    let _ = chan
+                        .send(Event::PlayerBuzzed(player_name.clone()))
+                        .await;
                 }
             }
 
@@ -255,7 +271,8 @@ async fn buzzer_websocket(
                 let mut rooms = rooms.lock().unwrap();
                 let room = rooms.entry(video_id).or_default();
 
-                let player = room.players.entry(player_name.clone()).or_default();
+                let player =
+                    room.players.entry(player_name.clone()).or_default();
                 player.connected_channels -= 1;
 
                 // No one left, free memory
