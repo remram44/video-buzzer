@@ -4,7 +4,7 @@ use log::{info, warn};
 use rand::Rng;
 use std::collections::hash_map::{Entry, HashMap};
 use std::env;
-use std::net::Ipv4Addr;
+use std::net::IpAddr;
 use std::sync::{Arc, Mutex};
 use warp::http::Uri;
 use warp::path;
@@ -12,8 +12,6 @@ use warp::reply::with::header;
 use warp::{Filter, Rejection, Reply};
 
 mod files;
-
-const PORT: u16 = 8000;
 
 struct TempSet<T> {
     next_id: u32,
@@ -293,6 +291,43 @@ async fn main() {
     }
     pretty_env_logger::init();
 
+    let matches = {
+        use clap::{Arg, App};
+        App::new("video-buzzer")
+            .version(env!("CARGO_PKG_VERSION"))
+            .author(env!("CARGO_PKG_AUTHORS"))
+            .about(env!("CARGO_PKG_DESCRIPTION"))
+            .arg(
+                Arg::with_name("port")
+                    .short("p")
+                    .help("Port number to listen on")
+                    .takes_value(true)
+                    .default_value("8000")
+            )
+            .arg(
+                Arg::with_name("host")
+                    .short("h")
+                    .help("Host to bind the listening socket to")
+                    .takes_value(true)
+                    .default_value("127.0.0.1")
+            ).get_matches()
+    };
+
+    let host: IpAddr = match matches.value_of("host").unwrap().parse() {
+        Ok(h) => h,
+        Err(_) => {
+            eprintln!("Invalid host");
+            std::process::exit(2);
+        }
+    };
+    let port = match matches.value_of("port").unwrap().parse() {
+        Ok(p) => p,
+        Err(_) => {
+            eprintln!("Invalid port number");
+            std::process::exit(2);
+        }
+    };
+
     let rooms: Rooms = Arc::new(Mutex::new(HashMap::new()));
 
     let routes =
@@ -351,6 +386,6 @@ async fn main() {
 
     let routes = routes.with(warp::log("video_buzzer"));
 
-    eprintln!("Starting server on port {}", PORT);
-    warp::serve(routes).run((Ipv4Addr::UNSPECIFIED, PORT)).await;
+    eprintln!("Starting server on {}:{}", host, port);
+    warp::serve(routes).run((host, port)).await;
 }

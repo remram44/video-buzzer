@@ -2,9 +2,11 @@
 name = "video-buzzer"
 version = "0.1.0"
 authors = ["Remi Rampin <r@remirampin.com>"]
+description = "Couch gaming system for television shows"
 edition = "2018"
 
 [dependencies]
+clap = "2.33"
 tokio = { version = "0.2", features = ["macros"] }
 futures = "0.3"
 warp = "0.2"
