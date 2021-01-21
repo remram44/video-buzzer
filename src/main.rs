@@ -1,11 +1,11 @@
 use futures::select;
 use futures::{SinkExt, StreamExt};
-use log::{info, warn};
 use rand::Rng;
 use std::collections::hash_map::{Entry, HashMap};
 use std::env;
 use std::net::IpAddr;
 use std::sync::{Arc, Mutex};
+use tracing::{info, warn};
 use warp::http::Uri;
 use warp::path;
 use warp::reply::with::header;
@@ -244,10 +244,7 @@ async fn buzzer_websocket(
                         break;
                     }
                 };
-                info!(
-                    "Video {}: player {:?}: {:?}",
-                    video_id, player_name, msg
-                );
+                info!("Video {}: player {:?}: {:?}", video_id, player_name, msg);
 
                 let channels = {
                     let mut rooms = rooms.lock().unwrap();
