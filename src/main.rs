@@ -286,7 +286,7 @@ async fn main() {
     if env::var_os("RUST_LOG").is_none() {
         env::set_var("RUST_LOG", "video_buzzer=info");
     }
-    pretty_env_logger::init();
+    pretty_env_logger::init_timed();
 
     let matches = {
         use clap::{Arg, App};
