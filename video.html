@@ -87,6 +87,9 @@ function showYoutubeVideo(youtubeId) {
       height: "100%",
       width: "100%",
       videoId: youtubeId,
+      playerVars: {
+        fs: 0, // No full screen button
+      },
       events: {
         onReady: function() {
           videoPlayer = {
