@@ -26,6 +26,12 @@
           <input type="text" id="youtube-selector" class="form-control col-sm-9" placeholder="https://www.youtube.com/watch?v=9g3--WYH8SY">
         </div>
       </form>
+      <form id="peertube-selector-form">
+        <div class="form-group row">
+          <label for="peertube-selector" class="col-sm-3">Or PeerTube:</label>
+          <input type="text" id="peertube-selector" class="form-control col-sm-9" placeholder="https://peertube2.cpy.re/w/5a6133b8-3e0c-40dc-b859-69d0540c3fe5">
+        </div>
+      </form>
 
       <h2>2. Join using your phones by typing this URL:</h2>
 
@@ -62,6 +68,21 @@ function loadYoutube() {
     youtubeLoading = true;
   }
   return youtubeLoaded;
+}
+
+// Load PeerTube API
+var peertubePromise = undefined;
+function loadPeertube() {
+  if(!peertubePromise) {
+    peertubePromise = new Promise(function(resolve, reject) {
+      var peertubeJs = document.createElement("script");
+      peertubeJs.src = "https://unpkg.com/@peertube/embed-api/build/player.min.js";
+      peertubeJs.addEventListener("error", reject);
+      peertubeJs.addEventListener("load", resolve);
+      document.body.appendChild(peertubeJs);
+    });
+  }
+  return peertubePromise;
 }
 
 var currentPath = window.location.pathname; // "/video/1234"
@@ -106,6 +127,33 @@ function showYoutubeVideo(youtubeId) {
   });
 }
 
+function showPeertubeVideo(peertubeHost, peertubeId) {
+  // Replace existing element with an iframe
+  var oldVideo = document.getElementById("video");
+  var newVideo = document.createElement("iframe");
+  newVideo.setAttribute("id", "video");
+  newVideo.setAttribute("src", "https://" + peertubeHost + "/videos/embed/" + peertubeId + "?api=1&peertubeLink=0");
+  newVideo.setAttribute("width", "100%");
+  newVideo.setAttribute("height", "100%");
+  newVideo.setAttribute("frameborder", "0");
+  oldVideo.parentNode.replaceChild(newVideo, oldVideo);
+
+  // Load video, set videoPlayer when done
+  return loadPeertube().then(function() {
+    var player = new PeerTubePlayer(document.getElementById("video"));
+    player.ready.then(function() {
+      videoPlayer = {
+        play: function() {
+          player.play();
+        },
+        pause: function() {
+          player.pause();
+        },
+      };
+    });
+  });
+}
+
 // Show a video file
 function showVideoFile(file) {
   var videoType = file.type;
@@ -146,6 +194,15 @@ document.getElementById("youtube-selector-form").addEventListener("submit", func
   var m = youtubeSelector.value.match(new RegExp("(?:https?://)?(?:www\\.)?youtube\\.com/watch\\?v=([^/]+)"));
   if(m) {
     showYoutubeVideo(m[1]);
+  }
+});
+
+var peertubeSelector = document.getElementById("peertube-selector");
+document.getElementById("peertube-selector-form").addEventListener("submit", function(e) {
+  e.preventDefault();
+  var m = peertubeSelector.value.match(new RegExp("(?:https?://)?([^/]+)/w/([^/]+)(?:\\?.*)?$"));
+  if(m) {
+    showPeertubeVideo(m[1], m[2]);
   }
 });
 
