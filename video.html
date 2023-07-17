@@ -20,6 +20,12 @@
           <small class="form-text text-muted">You can only upload video files (e.g. <code>mp4</code>, <code>ogg</code>, ...)</small>
         </div>
       </div>
+      <form id="direct-url-selector-form">
+        <div class="form-group row">
+          <label for="direct-url-selector" class="col-sm-3">A direct link to a video file:</label>
+          <input type="text" id="direct-url-selector" class="form-control col-sm-9" placeholder="https://example.org/video.mp4">
+        </div>
+      </form>
       <form id="youtube-selector-form">
         <div class="form-group row">
           <label for="youtube-selector" class="col-sm-3">Or use a YouTube video:</label>
@@ -106,6 +112,27 @@ function showYoutubeVideo(youtubeId) {
   });
 }
 
+function showDirectUrlVideo(url) {
+  var videoElement = document.createElement("video");
+  videoElement.setAttribute("id", "video");
+  videoElement.setAttribute("controls", true);
+  videoElement.setAttribute("width", "100%");
+  videoElement.setAttribute("height", "100%");
+  videoElement.src = url;
+  var oldVideo = document.getElementById("video");
+  oldVideo.parentNode.replaceChild(videoElement, oldVideo);
+
+  // Set videoPlayer
+  videoPlayer = {
+    play: function() {
+      videoElement.play();
+    },
+    pause: function() {
+      videoElement.pause();
+    },
+  };
+}
+
 // Show a video file
 function showVideoFile(file) {
   var videoType = file.type;
@@ -146,6 +173,15 @@ document.getElementById("youtube-selector-form").addEventListener("submit", func
   var m = youtubeSelector.value.match(new RegExp("(?:https?://)?(?:www\\.)?youtube\\.com/watch\\?v=([^/]+)"));
   if(m) {
     showYoutubeVideo(m[1]);
+  }
+});
+
+var directUrlSelector = document.getElementById("direct-url-selector");
+document.getElementById("direct-url-selector-form").addEventListener("submit", function(e) {
+  e.preventDefault();
+  var m = directUrlSelector.value.match(new RegExp("https?://"));
+  if(m) {
+    showDirectUrlVideo(directUrlSelector.value);
   }
 });
 
